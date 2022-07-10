@@ -15,6 +15,7 @@ use Mautic\CoreBundle\Controller\AjaxController as CommonAjaxController;
 use Mautic\CoreBundle\Helper\InputHelper;
 use Mautic\IntegrationsBundle\Exception\IntegrationNotFoundException;
 use Mautic\LeadBundle\Entity\Lead;
+use Mautic\WebhookBundle\Entity\Webhook;
 use Mautic\WebhookBundle\Http\Client;
 use Mautic\WebhookBundle\utils\RequestResponseProcessing;
 use MauticPlugin\WHPBundle\Integration\WHPIntegration;
@@ -170,14 +171,47 @@ class AjaxController extends CommonAjaxController
         $token = $request->get('token', '');
         $subject_entity_id = $request->get('testContactId', '');
         $actualLoad = $request->get('actualLoad', '');
-        $fieldsWithValues = $request->get('fieldsWithValues');
+//        $fieldsWithValues = $request->get('fieldsWithValues');
         $subject = $request->get('subject');
+
+        // parse $receivedFields in form
+        $forms = $_POST['form'];
+        $receivedFields = [];
+        $subjectFields = [];
+        foreach ($forms as $form){
+            if (str_ends_with($form['name'], '][receivedField]')){
+                $receivedFields[] = $form['value'];
+            }
+            if (str_ends_with($form['name'], '][subjectField]')){
+                $subjectFields[] = $form['value'];
+            }
+        }
+        $test = array_combine( $receivedFields, $subjectFields );
+
+        // parse $headers in form
+        $forms = $_POST['form'];
+        $receivedFields = [];
+        $subjectFields = [];
+        foreach ($forms as $form){
+            if (str_ends_with($form['name'], '][headerKey]')){
+                $receivedFields[] = $form['value'];
+            }
+            if (str_ends_with($form['name'], '][headerValue]')){
+                $subjectFields[] = $form['value'];
+            }
+        }
+        $headers = array_combine( $receivedFields, $subjectFields );
+
+        // test $wh
+        $whRepository = $this->factory->getEntityManager()->getRepository(Webhook::class);
+        $wh = $whRepository->find(1);
 
         # PROCESSING DATA
         if($this->checkIfPremium()){
             $requestResponseProcessing = new RequestResponseProcessing(
-                $url, $method, $headers, $auth_type, $login, $password, $token, $actualLoad, $fieldsWithValues,
-                $subject_entity_id, $this->factory, $extra, $subject, $payloads
+                $url, $method, $headers, $auth_type, $login, $password, $token, $actualLoad,
+//                $fieldsWithValues,
+                $subject_entity_id, $this->factory, $extra, $subject, $payloads, $wh, $test
             );
             $responseList = $requestResponseProcessing->startProcessing();
             $response = $responseList[0];

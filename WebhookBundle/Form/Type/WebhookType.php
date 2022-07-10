@@ -19,6 +19,7 @@ use Mautic\CoreBundle\Form\Type\FormButtonsType;
 use Mautic\CoreBundle\Form\Type\YesNoButtonGroupType;
 use Mautic\CoreBundle\Helper\EncryptionHelper;
 use Mautic\IntegrationsBundle\Exception\IntegrationNotFoundException;
+use Mautic\WebhookBundle\Entity\ReceivedPair;
 use Mautic\WebhookBundle\Entity\Webhook;
 use Mautic\WebhookBundle\Form\DataTransformer\EventsToArrayTransformer;
 use Mautic\WebhookBundle\utils\IfPremium;
@@ -26,6 +27,7 @@ use MauticPlugin\WHPBundle\Integration\WHPIntegration;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ButtonType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
@@ -119,17 +121,17 @@ class WebhookType extends AbstractType
             );
 
 
-            $builder->add(
-                'headers',
-                TextareaType::class,
-                [
-                    'label' => 'mautic.webhook.form.headers',
-                    'required' => false,
-                    'attr' => [
-                        'class' => 'form-control',
-                    ],
-                ]
-            );
+//            $builder->add(
+//                'headers',
+//                TextareaType::class,
+//                [
+//                    'label' => 'mautic.webhook.form.headers',
+//                    'required' => false,
+//                    'attr' => [
+//                        'class' => 'form-control',
+//                    ],
+//                ]
+//            );
 
             $choices = ['Other' => 'Other', 'Basic' => 'Basic', 'Token' => 'Token'];
             $builder->add(
@@ -194,17 +196,17 @@ class WebhookType extends AbstractType
 //                ]
 //            );
 
-            $builder->add(
-                'fieldsWithValues',
-                TextareaType::class,
-                [
-                    'label' => 'mautic.webhook.form.fieldsWithValues',
-                    'required' => false,
-                    'attr' => [
-                        'class' => 'form-control',
-                    ],
-                ]
-            );
+//            $builder->add(
+//                'fieldsWithValues',
+//                TextareaType::class,
+//                [
+//                    'label' => 'mautic.webhook.form.fieldsWithValues',
+//                    'required' => false,
+//                    'attr' => [
+//                        'class' => 'form-control',
+//                    ],
+//                ]
+//            );
 
             $builder->add(
                 'testContactId',
@@ -227,6 +229,35 @@ class WebhookType extends AbstractType
                     'label' => 'mautic.webhook.send.test.payload.prem',
                 ]
             );
+
+//            $builder->add(
+//                'addField',
+//                ButtonType::class,
+//                [
+//                    'attr'  => ['class' => 'btn btn-success', 'onclick' => 'addItem(this)'],
+//                    'label' => 'addField',
+//                ]
+//            );
+
+            $builder->add('receivedPairs', CollectionType::class, [
+                'entry_type'   => ReceivedPairType::class,
+                'allow_add' => true,
+                'required' => false,
+                'by_reference' => false,
+                'allow_delete' => true,
+                'label' => 'mautic.webhook.form.fieldsWithValues_new',
+                ]);
+
+
+            $builder->add('headers', CollectionType::class, [
+                'entry_type'   => HeaderType::class,
+                'allow_add' => true,
+                'required' => false,
+                'by_reference' => false,
+                'allow_delete' => true,
+                'label' => 'mautic.webhook.form.headers_new',
+            ]);
+
             //CUSTOM
         }
         # CUSTOM

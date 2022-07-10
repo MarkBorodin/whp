@@ -45,13 +45,19 @@ $view['slots']->set('headerTitle', $header);
                         echo $view['form']->row($form['subject']).PHP_EOL;
                         echo $view['form']->row($form['method']).PHP_EOL;
                         echo $view['form']->row($form['headers']).PHP_EOL;
+                        echo '<button type="button" class="btn btn-success" onclick="addFormToCollectionHeader(this)" data-collection-holder-class="receivedPairs">'.$view['translator']->trans('mautic.webhook.form.add.header').'</button>'.'<br>'.'<br>'.'<br>';
                         echo $view['form']->row($form['authType']).PHP_EOL;
                         echo $view['form']->row($form['login']).PHP_EOL;
                         echo $view['form']->row($form['password']).PHP_EOL;
                         echo $view['form']->row($form['token']).PHP_EOL;
 //                        echo $view['form']->row($form['actualLoad']).PHP_EOL;
-                        echo $view['form']->row($form['fieldsWithValues']).PHP_EOL;
                         echo $view['form']->row($form['testContactId']).PHP_EOL;
+//                        echo $view['form']->row($form['fieldsWithValues']).PHP_EOL;
+                        echo $view['form']->row($form['receivedPairs']).PHP_EOL;
+//                        echo $view['form']->row($form['addField']).'<br>'.'<br>';
+
+                        echo '<button type="button" class="btn btn-success" onclick="addFormToCollection(this)" data-collection-holder-class="receivedPairs">'.$view['translator']->trans('mautic.webhook.form.add.received.pair').'</button>'.'<br>'.'<br>';
+
                     }
                     ?>
                     <!--                    CUSTOM-->
@@ -81,9 +87,27 @@ $view['slots']->set('headerTitle', $header);
                     </div>
 
                 </div>
-                <div class="col-md-6" id="event-types">
-                    <?php echo $view['form']->row($form['events']); ?>
-                </div>
+
+
+                <?php
+                $isPremium = $GLOBALS['isPremium'];
+                if($isPremium) {
+                    echo '<div class="col-md-6" id="lead-fields">';
+                        echo '<p><b>'.$view['translator']->trans('mautic.webhook.form.available.contact.fields').'</b><p>';
+                        foreach ($GLOBALS['leadFields'] as $field) {
+                            echo $field . PHP_EOL . '<br>';
+                        }
+                    echo '</div>';
+
+                    echo '<div class="col-md-6" id="company-fields">';
+                        echo '<p><b>'.$view['translator']->trans('mautic.webhook.form.available.company.fields').'</b><p>';
+                        foreach ($GLOBALS['companyFields'] as $field) {
+                            echo $field . PHP_EOL . '<br>';
+                        }
+                    echo '</div>';
+                }
+                ?>
+
             </div>
         </div>
     </div>
@@ -93,6 +117,100 @@ $view['slots']->set('headerTitle', $header);
             <?php echo $view['form']->row($form['eventsOrderbyDir']); ?>
             <?php echo $view['form']->row($form['isPublished']); ?>
         </div>
+        <div class="col-md-6" id="event-types">
+            <?php echo $view['form']->row($form['events']); ?>
+        </div>
     </div>
 </div>
 <?php echo $view['form']->end($form); ?>
+
+
+
+
+<script>
+
+    // received pairs
+
+    const addReceivedPairsFormDeleteLink = (receivedPair) => {
+        const removeFormButton = document.createElement('button')
+        removeFormButton.classList
+        removeFormButton.className = 'btn btn-warning'
+        removeFormButton.innerText = 'Delete'
+
+        receivedPair.append(removeFormButton);
+
+        removeFormButton.addEventListener('click', (e) => {
+            e.preventDefault()
+            receivedPair.parentNode.parentNode.remove();
+        });
+    }
+
+    const receivedPairs = document.querySelectorAll(`div[id^="webhook_receivedPairs_"]`)
+    receivedPairs.forEach((receivedPair) => {
+        addReceivedPairsFormDeleteLink(receivedPair)
+    })
+
+    const addFormToCollection = (e) => {
+        var items = document.querySelectorAll(`div[id^="webhook_receivedPairs_"]`);
+        var num = Number(items.length)
+        const collectionHolder = document.querySelector(`div[id^="webhook_receivedPairs"]`);
+        const item = document.createElement('div');
+        item.innerHTML = collectionHolder
+            .dataset
+            .prototype
+            .replace(
+                /__name__/g,
+                num
+            );
+        addReceivedPairsFormDeleteLink(item);
+        collectionHolder.appendChild(item);
+        collectionHolder.dataset.index = num;
+    };
+
+    // received pairs
+
+
+    // headers
+
+    const addHeadersFormDeleteLink = (header) => {
+        const removeFormButton = document.createElement('button')
+        removeFormButton.classList
+        removeFormButton.className = 'btn btn-warning'
+        removeFormButton.innerText = 'Delete'
+
+        header.append(removeFormButton);
+
+        removeFormButton.addEventListener('click', (e) => {
+            e.preventDefault()
+            header.parentNode.parentNode.remove();
+        });
+    }
+
+    const headers = document.querySelectorAll(`div[id^="webhook_headers_"]`)
+    headers.forEach((header) => {
+        addHeadersFormDeleteLink(header)
+    })
+
+    const addFormToCollectionHeader = (e) => {
+        var items = document.querySelectorAll(`div[id^="webhook_headers_"]`);
+        var num = Number(items.length)
+        const collectionHolder = document.querySelector(`div[id^="webhook_headers"]`);
+        const item = document.createElement('div');
+        item.innerHTML = collectionHolder
+            .dataset
+            .prototype
+            .replace(
+                /__name__/g,
+                num
+            );
+        addHeadersFormDeleteLink(item);
+        collectionHolder.appendChild(item);
+        collectionHolder.dataset.index = num;
+    };
+
+    // headers
+
+</script>
+
+
+

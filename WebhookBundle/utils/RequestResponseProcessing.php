@@ -2,10 +2,14 @@
 
 namespace Mautic\WebhookBundle\utils;
 
+use Doctrine\ORM\Mapping as ORM;
 use GuzzleHttp\Client;
 use Mautic\CoreBundle\Controller\CommonController;
 use Mautic\LeadBundle\Entity\Company;
 use Mautic\LeadBundle\Entity\Lead;
+use Mautic\WebhookBundle\Entity\Header;
+use Mautic\WebhookBundle\Entity\ReceivedPair;
+use Mautic\WebhookBundle\Entity\Webhook;
 
 class RequestResponseProcessing extends CommonController
 {
@@ -31,27 +35,37 @@ class RequestResponseProcessing extends CommonController
     public $subject_entity = '';
     public $payload = '';
     public $responseData = '';
+    /**
+     * @ORM\Column(type=Webnook)
+     */
+    public $webhook;
+    public $test;
 
 
     public function __construct(
-        $url, $method, $headers, $authType, $login, $password, $token, $actualLoad, $fieldsWithValues, $subject_entity_id, $factory, $extra,
-        $subject, $payload
+        $url, $method, $headers, $authType, $login, $password, $token, $actualLoad,
+//        $fieldsWithValues,
+        $subject_entity_id, $factory, $extra,
+        $subject, $payload, $webhook, $test
     )
     {
         $this->url = $url;
         $this->method = $method;
-        $this->headers = $this->parseHeaders($headers);
+        $this->headers = $headers;
         $this->authType = $authType;
         $this->login = $login;
         $this->password = $password;
         $this->token = $token;
         $this->actualLoad = $this->parseActualLoad($actualLoad);
-        $this->fieldsWithValues = $this->parseFieldsWithValues($fieldsWithValues);
+//        $this->fieldsWithValues = $this->parseFieldsWithValues($fieldsWithValues);
+        $this->fieldsWithValues = [];
         $this->subject_entity_id = $subject_entity_id;
         $this->factory = $factory;
         $this->extra = $extra;
         $this->subject = $subject;
         $this->payload = $payload;
+        $this->webhook = $webhook;
+        $this->test = $test;
     }
 
 
@@ -74,9 +88,39 @@ class RequestResponseProcessing extends CommonController
                 break;
         }
 
-        # get entity
+        # get repository
         $repository = $this->factory->getEntityManager()->getRepository($repository);
+        # get entity
         $this->subject_entity = $repository->getEntity($this->subject_entity_id);
+
+
+        # set fieldsWithValues
+        if (!$this->test){
+            # get ReceivedPair Repository
+            $rpRepository = $this->factory->getEntityManager()->getRepository(ReceivedPair::class);
+            # get ReceivedPair entity
+            $rps = $rpRepository->findBy(['webhook' => $this->webhook->getId()]);
+            $this->fieldsWithValues = [];
+            foreach ($rps as $rp){
+                $this->fieldsWithValues[$rp->getReceivedField()] = $rp->getSubjectField();
+            }
+        }else{
+            $this->fieldsWithValues = $this->test;
+        }
+
+
+        # set headers
+        if (!$this->test){
+            # get Header Repository
+            $hdRepository = $this->factory->getEntityManager()->getRepository(Header::class);
+            # get Header entity
+            $hds = $hdRepository->findBy(['webhook' => $this->webhook->getId()]);
+            $this->headers = [];
+            foreach ($hds as $hd){
+                $this->headers[$hd->getHeaderKey()] = $hd->getHeaderValue();
+            }
+        }
+
 
         # config auth type
         $this->setHeaders();
@@ -101,18 +145,18 @@ class RequestResponseProcessing extends CommonController
         switch ($this->method) {
             case "GET":
                 $response = $this->sendGet();
-                $result = $this->processResponse($response);
                 break;
             case "POST":
                 $response = $this->sendPost();
-                $result = $this->processResponse($response);
                 break;
             default:
                 $this->method = 'GET';
                 $response = $this->sendGet();
-                $result = $this->processResponse($response);
+
                 break;
         }
+
+        $result = $this->processResponse($response);
 
         # set data to DB
         if(isset($result)){
@@ -204,13 +248,13 @@ class RequestResponseProcessing extends CommonController
                     foreach ($fieldsWithValues_list_temp as $item_key => $item_value) {
                         $pair = explode(':', $item_value);
                         $key = trim($pair[0]);
-                        $value = str_replace(' ', '_', trim($pair[1]));
+                        $value = trim($pair[1]);
                         $fieldsWithValues_list[$key] = $value;
                     }
                 }else{
                     $pair = explode(':', $fieldsWithValues_str);
                     $key = trim($pair[0]);
-                    $value = str_replace(' ', '_', trim($pair[0]));
+                    $value = trim($pair[1]);
                     $fieldsWithValues_list[$key] = $value;
                 }
             }else{

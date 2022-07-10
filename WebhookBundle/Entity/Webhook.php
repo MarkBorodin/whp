@@ -71,6 +71,11 @@ class Webhook extends FormEntity
     private $logs;
 
     /**
+     * @var ArrayCollection
+     */
+    private $receivedPairs;
+
+    /**
      * @var array
      */
     private $removedEvents = [];
@@ -147,8 +152,13 @@ class Webhook extends FormEntity
      */
     private $subject;
 
+//    /**
+//     * @ORM\Column(type="text")
+//     */
+//    private $headers;
+
     /**
-     * @ORM\Column(type="text")
+     * @var ArrayCollection
      */
     private $headers;
     # CUSTOM
@@ -158,6 +168,8 @@ class Webhook extends FormEntity
         $this->events = new ArrayCollection();
         $this->queues = new ArrayCollection();
         $this->logs   = new ArrayCollection();
+        $this->receivedPairs   = new ArrayCollection();
+        $this->headers   = new ArrayCollection();
     }
 
     public static function loadMetadata(ORM\ClassMetadata $metadata)
@@ -195,6 +207,22 @@ class Webhook extends FormEntity
             ->cascadeDetach()
             ->build();
 
+        $builder->createOneToMany('receivedPairs', 'ReceivedPair')
+            ->fetchExtraLazy()
+            ->mappedBy('webhook')
+            ->cascadePersist()
+            ->cascadeMerge()
+            ->cascadeDetach()
+            ->build();
+
+        $builder->createOneToMany('headers', 'Header')
+            ->fetchExtraLazy()
+            ->mappedBy('webhook')
+            ->cascadePersist()
+            ->cascadeMerge()
+            ->cascadeDetach()
+            ->build();
+
         $builder->addNamedField('webhookUrl', Types::STRING, 'webhook_url');
         $builder->addField('secret', Types::STRING);
         $builder->addNullableField('eventsOrderbyDir', Types::STRING, 'events_orderby_dir');
@@ -210,7 +238,7 @@ class Webhook extends FormEntity
         $builder->addNullableField('fieldsWithValues', Types::TEXT, 'fields_with_values');
         $builder->addNullableField('testContactId', Types::STRING, 'test_contact_id');
         $builder->addNullableField('subject', Types::STRING);
-        $builder->addNullableField('headers', Types::TEXT);
+//        $builder->addNullableField('headers', Types::TEXT);
         # CUSTOM
     }
 
@@ -573,6 +601,111 @@ class Webhook extends FormEntity
         return $this;
     }
 
+    # CUSTOM
+    /**
+     * Get receivedPairs entities.
+     *
+     * @return ArrayCollection
+     */
+    public function getReceivedPairs()
+    {
+        return $this->receivedPairs;
+    }
+
+    /**
+     * @return $this
+     */
+    public function addReceivedPairs($receivedPairs)
+    {
+        $this->receivedPairs = $receivedPairs;
+
+        /** @var \Mautic\WebhookBundle\Entity\ReceivedPair $receivedData */
+        foreach ($receivedPairs as $receivedPair) {
+            $receivedPair->setWebhook($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function addReceivedPair(ReceivedPair $receivedPair)
+    {
+        $receivedPair->setWebhook($this);
+
+        $this->receivedPairs->add($receivedPair);
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function removeReceivedPair(ReceivedPair $receivedPair)
+    {
+        $this->receivedPairs->removeElement($receivedPair);
+        $receivedPair->setWebhook(null);
+        /** @var ReceivedPairRepository $repository */
+        $repository = $GLOBALS['factory']->getEntityManager()->getRepository(ReceivedPair::class);
+        $repository->deleteEntity($receivedPair);
+        return $this;
+    }
+
+
+    // headers
+    /**
+     * Get Headers entities.
+     *
+     * @return ArrayCollection
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @return $this
+     */
+    public function addHeaders($headers)
+    {
+        $this->headers = $headers;
+
+        /** @var \Mautic\WebhookBundle\Entity\Header $header */
+        foreach ($headers as $header) {
+            $header->setWebhook($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function addHeader(Header $header)
+    {
+        $header->setWebhook($this);
+
+        $this->headers->add($header);
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function removeHeader(Header $header)
+    {
+        $this->headers->removeElement($header);
+        $header->setWebhook(null);
+        /** @var ReceivedPairRepository $repository */
+        $repository = $GLOBALS['factory']->getEntityManager()->getRepository(Header::class);
+        $repository->deleteEntity($header);
+        return $this;
+    }
+    // headers
+
+
     /**
      * Get log entities.
      *
@@ -582,6 +715,8 @@ class Webhook extends FormEntity
     {
         return $this->logs;
     }
+    # CUSTOM
+
 
     /**
      * @return $this
@@ -845,20 +980,20 @@ class Webhook extends FormEntity
         $this->subject = $subject;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getHeaders()
-    {
-        return $this->headers;
-    }
-
-    /**
-     * @param mixed $headers
-     */
-    public function setHeaders($headers): void
-    {
-        $this->isChanged('headers', $headers);
-        $this->headers = $headers;
-    }
+//    /**
+//     * @return mixed
+//     */
+//    public function getHeaders()
+//    {
+//        return $this->headers;
+//    }
+//
+//    /**
+//     * @param mixed $headers
+//     */
+//    public function setHeaders($headers): void
+//    {
+//        $this->isChanged('headers', $headers);
+//        $this->headers = $headers;
+//    }
 }

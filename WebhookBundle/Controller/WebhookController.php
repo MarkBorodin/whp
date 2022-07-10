@@ -12,6 +12,11 @@
 namespace Mautic\WebhookBundle\Controller;
 
 use Mautic\CoreBundle\Controller\FormController;
+use Mautic\WebhookBundle\Entity\Header;
+use Mautic\WebhookBundle\Entity\HeaderRepository;
+use Mautic\WebhookBundle\Entity\ReceivedPair;
+use Mautic\WebhookBundle\Entity\ReceivedPairRepository;
+use Mautic\WebhookBundle\utils\IfPremium;
 
 /**
  * Class WebhookController.
@@ -62,6 +67,50 @@ class WebhookController extends FormController
      */
     public function editAction($objectId, $ignorePost = false)
     {
+        $GLOBALS['factory'] = $this->factory;
+
+        $isPremium = new IfPremium($this->factory);
+        if ($isPremium->checkIfPremium()){
+            if (isset($_POST['webhook'])) {
+                $webhook = $_POST['webhook'];
+
+                $receivedPairs = $webhook['receivedPairs'];
+                foreach ($receivedPairs as $receivedPair){
+                    if (isset($receivedPair['id']) and $receivedPair['id'] != ''){
+                        /** @var ReceivedPairRepository $repository */
+                        $em = $this->factory->getEntityManager();
+                        $repository = $em->getRepository(ReceivedPair::class);
+                        $entity = $repository->getEntity($receivedPair['id']);
+                        /** @var ReceivedPair $entity */
+                        $entity->setReceivedField($receivedPair['receivedField']);
+                        $entity->setSubjectField($receivedPair['subjectField']);
+                        $em->persist($entity);
+                        $em->flush();
+                        unset($receivedPair['id']);
+                    }
+                }
+
+                $headers = $webhook['headers'];
+                foreach ($headers as $header){
+                    if (isset($header['id']) and $header['id'] != ''){
+                        /** @var HeaderRepository $repository */
+                        $em = $this->factory->getEntityManager();
+                        $repository = $em->getRepository(Header::class);
+                        $entity = $repository->getEntity($header['id']);
+                        /** @var Header $entity */
+                        $entity->setHeaderKey($header['headerKey']);
+                        $entity->setHeaderValue($header['headerValue']);
+                        $em->persist($entity);
+                        $em->flush();
+                        unset($header['id']);
+                    }
+                }
+            }
+        }
+
+
+
+
         return parent::editStandard($objectId, $ignorePost);
     }
 

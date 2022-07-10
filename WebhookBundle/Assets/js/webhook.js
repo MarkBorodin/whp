@@ -32,19 +32,19 @@ Mautic.sendHookTest = function() {
         url: url,
         secret: secret,
 
-        // // CUSTOM
-        // extra: extra,
-        // method: method,
-        // headers: headers,
-        // authType: authType,
-        // login: login,
-        // password: password,
-        // token: token,
-        // actualLoad: actualLoad,
-        // fieldsWithValues: fieldsWithValues,
-        // testContactId: testContactId,
-        // subject: subject,
-        // // CUSTOM
+        // CUSTOM
+        extra: extra,
+        method: method,
+        headers: headers,
+        authType: authType,
+        login: login,
+        password: password,
+        token: token,
+        actualLoad: actualLoad,
+        fieldsWithValues: fieldsWithValues,
+        testContactId: testContactId,
+        subject: subject,
+        // CUSTOM
 
         types: selectedTypes
     };
@@ -84,15 +84,20 @@ Mautic.sendHookTestPrem = function() {
     // CUSTOM
     var extra = mQuery('#webhook_extra').val();
     var method = mQuery('#webhook_method').val();
-    var headers = mQuery('#webhook_headers').val();
+    // var headers = mQuery('#webhook_headers').val();
     var authType = mQuery('#webhook_authType').val();
     var login = mQuery('#webhook_login').val();
     var password = mQuery('#webhook_password').val();
     var token = mQuery('#webhook_token').val();
     var actualLoad = mQuery('#webhook_actualLoad').val();
-    var fieldsWithValues = mQuery('#webhook_fieldsWithValues').val();
+    // var fieldsWithValues = mQuery('#webhook_fieldsWithValues').val();
     var testContactId = mQuery('#webhook_testContactId').val();
     var subject = mQuery('#webhook_subject').val();
+    // var form = mQuery('form[name="webhook"]')
+    var form = mQuery('form[name="webhook"]').serializeArray()
+
+
+
     // CUSTOM
 
     var eventTypes = mQuery("#event-types input[type='checkbox']");
@@ -113,15 +118,16 @@ Mautic.sendHookTestPrem = function() {
         // CUSTOM
         extra: extra,
         method: method,
-        headers: headers,
+        // headers: headers,
         authType: authType,
         login: login,
         password: password,
         token: token,
         actualLoad: actualLoad,
-        fieldsWithValues: fieldsWithValues,
+        // fieldsWithValues: fieldsWithValues,
         testContactId: testContactId,
         subject: subject,
+        form: form,
         // CUSTOM
 
         types: selectedTypes

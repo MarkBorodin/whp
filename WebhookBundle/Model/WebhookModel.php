@@ -18,6 +18,10 @@ use Mautic\ApiBundle\Serializer\Exclusion\PublishDetailsExclusionStrategy;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\CoreBundle\Helper\EncryptionHelper;
 use Mautic\CoreBundle\Model\FormModel;
+use Mautic\LeadBundle\Entity\Company;
+use Mautic\LeadBundle\Entity\CompanyRepository;
+use Mautic\LeadBundle\Entity\Lead;
+use Mautic\LeadBundle\Entity\LeadRepository;
 use Mautic\WebhookBundle\Entity\Event;
 use Mautic\WebhookBundle\Entity\EventRepository;
 use Mautic\WebhookBundle\Entity\Log;
@@ -180,10 +184,61 @@ class WebhookModel extends FormModel
 
         $params['events'] = $this->getEvents();
 
+        # CUSTOM
         $GLOBALS['isPremium'] = $this->ifPremium->checkIfPremium();
+        $this->getFields();
+        # CUSTOM
 
         return $formFactory->create(WebhookType::class, $entity, $params);
     }
+
+    # CUSTOM
+    public function getFields(){
+
+        # Remove some fields from the list
+        $valuesToRemove = [
+            'id', 'checked_out', 'checked_out_by', 'checked_out_by_user', 'created_by', 'created_by_user', 'date_added',
+            'date_identified', 'date_modified', 'internal', 'is_published', 'modified_by', 'modified_by_user',
+            'preferred_profile_image', 'social_cache', 'zipcode', 'companyzipcode',
+        ];
+
+        # lead field
+        /** @var LeadRepository $leadRepository */
+        $leadRepository = $this->factory->getEntityManager()->getRepository(Lead::class);
+        $leadTableColumns = $leadRepository->getTableColumns();
+        foreach ($valuesToRemove as $valueToRemove){
+            if (($key = array_search($valueToRemove, $leadTableColumns)) !== false) {
+                unset($leadTableColumns[$key]);
+            }
+        }
+        $leadCustomFields = $leadRepository->getCustomFieldList('lead');
+        foreach ($leadCustomFields[0] as $customFieldKey => $customFieldValue){
+            if (!in_array($customFieldKey, $leadTableColumns))
+            {
+                $leadTableColumns[] = $customFieldKey;
+            }
+        }
+        $GLOBALS['leadFields'] = $leadTableColumns;
+
+        # company fields
+        /** @var CompanyRepository $companyRepository */
+        $companyRepository = $this->factory->getEntityManager()->getRepository(Company::class);
+        $companyTableColumns = $companyRepository->getTableColumns();
+        foreach ($valuesToRemove as $valueToRemove){
+            if (($key = array_search($valueToRemove, $companyTableColumns)) !== false) {
+                unset($companyTableColumns[$key]);
+            }
+        }
+        $companyCustomFields = $companyRepository->getCustomFieldList('company');
+        foreach ($companyCustomFields[0] as $customFieldKey => $customFieldValue){
+            if (!in_array($customFieldKey, $companyTableColumns))
+            {
+                $companyTableColumns[] = $customFieldKey;
+            }
+        }
+        $GLOBALS['companyFields'] = $companyTableColumns;
+    }
+    # CUSTOM
 
     /**
      * @return Webhook|null
@@ -346,17 +401,21 @@ class WebhookModel extends FormModel
                     $zero = reset($object_event);
                     $subject_entity_id = reset($zero);
 
+                    $test = false;
+
                     # process
                     $requestResponseProcessing = new RequestResponseProcessing(
                         $webhook->getWebhookUrl(), $webhook->getMethod(), $webhook->getHeaders(),
                         $webhook->getAuthType(), $webhook->getLogin(),
                         $webhook->getPassword(), $webhook->getToken(), $webhook->getActualLoad(),
-                        $webhook->getFieldsWithValues(),
+//                        $webhook->getFieldsWithValues(),
                         $subject_entity_id['id'],
                         $this->factory,
                         $webhook->getExtra(),
                         $webhook->getSubject(),
-                        $payload
+                        $payload,
+                        $webhook,
+                        $test
                     );
                     $responseList = $requestResponseProcessing->startProcessing();
                     $response = $responseList[0];
