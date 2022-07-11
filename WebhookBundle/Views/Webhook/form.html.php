@@ -138,6 +138,8 @@ $view['slots']->set('headerTitle', $header);
         removeFormButton.innerText = 'Delete'
 
         receivedPair.append(removeFormButton);
+        var br = document.createElement("br");
+        receivedPair.appendChild(br);
 
         removeFormButton.addEventListener('click', (e) => {
             e.preventDefault()
@@ -159,11 +161,21 @@ $view['slots']->set('headerTitle', $header);
             .dataset
             .prototype
             .replace(
+                '__name__label__',
+                num + 1
+            )
+            .replace(
+                /autocomplete="false"/g,
+                'autocomplete="false" class="form-control"'
+            )
+            .replace(
                 /__name__/g,
                 num
             );
         addReceivedPairsFormDeleteLink(item);
         collectionHolder.appendChild(item);
+        var br = document.createElement("br");
+        collectionHolder.appendChild(br);
         collectionHolder.dataset.index = num;
     };
 
@@ -179,6 +191,8 @@ $view['slots']->set('headerTitle', $header);
         removeFormButton.innerText = 'Delete'
 
         header.append(removeFormButton);
+        var br = document.createElement("br");
+        header.appendChild(br);
 
         removeFormButton.addEventListener('click', (e) => {
             e.preventDefault()
@@ -200,11 +214,22 @@ $view['slots']->set('headerTitle', $header);
             .dataset
             .prototype
             .replace(
+                '__name__label__',
+                num + 1
+            )
+            .replace(
+                /autocomplete="false"/g,
+                'autocomplete="false" class="form-control"'
+            )
+            .replace(
                 /__name__/g,
                 num
-            );
+            )
+        ;
         addHeadersFormDeleteLink(item);
         collectionHolder.appendChild(item);
+        var br = document.createElement("br");
+        collectionHolder.appendChild(br);
         collectionHolder.dataset.index = num;
     };
 
