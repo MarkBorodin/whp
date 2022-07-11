@@ -134,7 +134,7 @@ $view['slots']->set('headerTitle', $header);
     const addReceivedPairsFormDeleteLink = (receivedPair) => {
         const removeFormButton = document.createElement('button')
         removeFormButton.classList
-        removeFormButton.className = 'btn btn-warning'
+        removeFormButton.className = 'btn btn-danger'
         removeFormButton.innerText = 'Delete'
 
         receivedPair.append(removeFormButton);
@@ -187,7 +187,7 @@ $view['slots']->set('headerTitle', $header);
     const addHeadersFormDeleteLink = (header) => {
         const removeFormButton = document.createElement('button')
         removeFormButton.classList
-        removeFormButton.className = 'btn btn-warning'
+        removeFormButton.className = 'btn btn-danger'
         removeFormButton.innerText = 'Delete'
 
         header.append(removeFormButton);
