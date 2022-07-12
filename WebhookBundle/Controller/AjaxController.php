@@ -179,10 +179,10 @@ class AjaxController extends CommonAjaxController
         $receivedFields = [];
         $subjectFields = [];
         foreach ($forms as $form){
-            if (str_ends_with($form['name'], '][receivedField]')){
+            if ($this->endsWith($form['name'], '][receivedField]')){
                 $receivedFields[] = $form['value'];
             }
-            if (str_ends_with($form['name'], '][subjectField]')){
+            if ($this->endsWith($form['name'], '][subjectField]')){
                 $subjectFields[] = $form['value'];
             }
         }
@@ -193,10 +193,10 @@ class AjaxController extends CommonAjaxController
         $receivedFields = [];
         $subjectFields = [];
         foreach ($forms as $form){
-            if (str_ends_with($form['name'], '][headerKey]')){
+            if ($this->endsWith($form['name'], '][headerKey]')){
                 $receivedFields[] = $form['value'];
             }
-            if (str_ends_with($form['name'], '][headerValue]')){
+            if ($this->endsWith($form['name'], '][headerValue]')){
                 $subjectFields[] = $form['value'];
             }
         }
@@ -255,5 +255,15 @@ class AjaxController extends CommonAjaxController
             }
         }
         return false;
+    }
+
+    public function endsWith($haystack, $needle) {
+        $length = strlen( $needle );
+        if( !$length ) {
+            return true;
+        }
+//        return substr( $haystack, -$length ) === $needle;
+        $res = substr( $haystack, -$length ) === $needle;
+        return $res;
     }
 }
