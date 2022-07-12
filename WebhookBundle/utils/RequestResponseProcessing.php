@@ -130,7 +130,7 @@ class RequestResponseProcessing extends CommonController
 //                break;
             case "Basic":
 //                $this->options['auth'] = $this->authBasic();
-                $this->options['headers']['Authorization'] = ['Basic'. base64_encode($this->login.':'.$this->password)];
+                $this->options['headers']['Authorization'] = ['Basic '. base64_encode($this->login.':'.$this->password)];
                 break;
             case "Token":
 //                $this->options['auth'] = $this->authToken();
