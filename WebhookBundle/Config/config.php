@@ -122,6 +122,7 @@ return [
                     'mautic.http.connector',
                     'mautic.lead.model.company',
                     'event_dispatcher',
+                    'mautic.factory',
                 ],
             ],
             'mautic.webhook.http.client' => [
@@ -133,6 +134,12 @@ return [
             ],
             'mautic.webhook.if_premium' => [
                 'class'     => \Mautic\WebhookBundle\utils\IfPremium::class,
+                'arguments' => [
+                    'mautic.factory',
+                ],
+            ],
+            'mautic.webhook.premium_functionality' => [
+                'class'     => \Mautic\WebhookBundle\utils\PremiumFunctionality::class,
                 'arguments' => [
                     'mautic.factory',
                 ],

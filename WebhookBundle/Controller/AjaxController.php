@@ -262,7 +262,6 @@ class AjaxController extends CommonAjaxController
         if( !$length ) {
             return true;
         }
-//        return substr( $haystack, -$length ) === $needle;
         $res = substr( $haystack, -$length ) === $needle;
         return $res;
     }

@@ -14,11 +14,15 @@ namespace Mautic\WebhookBundle\Helper;
 use Doctrine\Common\Collections\Collection;
 use Joomla\Http\Http;
 use Mautic\CoreBundle\Helper\AbstractFormFieldHelper;
+use Mautic\IntegrationsBundle\Exception\IntegrationNotFoundException;
 use Mautic\LeadBundle\Entity\Lead;
 use Mautic\LeadBundle\Helper\TokenHelper;
 use Mautic\LeadBundle\Model\CompanyModel;
 use Mautic\WebhookBundle\Event\WebhookRequestEvent;
+use Mautic\WebhookBundle\utils\PremiumFunctionality;
 use Mautic\WebhookBundle\WebhookEvents;
+use MauticPlugin\MauticTwigTemplatesBundle\Entity\TwigTemplates;
+use MauticPlugin\MauticTwigTemplatesBundle\Integration\TwigTemplatesIntegration;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class CampaignHelper
@@ -45,11 +49,14 @@ class CampaignHelper
      */
     private $dispatcher;
 
-    public function __construct(Http $connector, $companyModel, EventDispatcherInterface $dispatcher)
+    public $factory;
+
+    public function __construct(Http $connector, $companyModel, EventDispatcherInterface $dispatcher, $factory)
     {
         $this->connector    = $connector;
         $this->companyModel = $companyModel;
         $this->dispatcher   = $dispatcher;
+        $this->factory   = $factory;
     }
 
     /**
@@ -59,19 +66,77 @@ class CampaignHelper
     {
         $payload = $this->getPayload($config, $contact);
         $headers = $this->getHeaders($config, $contact);
+        // custom
+        $headers = $this->checkAndEncodeCreds($headers);
+        $receivedData = $this->getReceivedData($config, $contact);
+        // custom
         $url     = rawurldecode(TokenHelper::findLeadTokens($config['url'], $this->getContactValues($contact), true));
 
         $webhookRequestEvent = new WebhookRequestEvent($contact, $url, $headers, $payload);
         $this->dispatcher->dispatch(WebhookEvents::WEBHOOK_ON_REQUEST, $webhookRequestEvent);
 
-        $this->makeRequest(
+        $response = $this->makeRequest(
             $webhookRequestEvent->getUrl(),
             $config['method'],
             $config['timeout'],
             $webhookRequestEvent->getHeaders(),
             $webhookRequestEvent->getPayload()
         );
+
+        $premiumFunctionality = new PremiumFunctionality($this->factory);
+        $result = $premiumFunctionality->processResponse($response, $receivedData);
+        if(isset($result)){
+            $premiumFunctionality->writeToDB($result, $contact->getId());
+        }
     }
+
+    // TODO
+    public function checkIfTwig($payload)
+    {
+        $integrationHelper = $this->factory->getHelper('integration');
+        /** @var TwigTemplatesIntegration $twigIntegration */
+        $twigIntegration = $integrationHelper->getIntegrationObject(TwigTemplatesIntegration::INTEGRATION_NAME);
+        $isPublished = false;
+        if($twigIntegration) {
+            try {
+                $integration = $twigIntegration->getIntegrationSettings();
+                $isPublished = $integration->getIsPublished() ?: false;
+            } catch (IntegrationNotFoundException $e) {
+                return false;
+            }
+
+            if($isPublished){
+                foreach ($payload as $itemKey => $itemValue){
+                    if(strpos($itemValue, 'twig') !== false){
+                        $twigArray = explode("=", $itemValue);
+                        $twigID = str_replace('}', '', $twigArray[1]);
+                        $twigID = trim($twigID);
+                        $repository = $this->factory->getEntityManager()->getRepository(TwigTemplates::class);
+                        /** @var TwigTemplates $twigEntity */
+                        $twigEntity = $repository->getEntity($twigID);
+                    }
+                }
+            }
+
+        }
+        return false;
+    }
+    // TODO
+
+    public function checkAndEncodeCreds($headers)
+    {
+        if (isset($headers['Authorization'])){
+            $authHeader = $headers['Authorization'];
+            if(strpos($authHeader, 'Basic') === 0)
+            {
+                $auth_array = explode(" ", $authHeader);
+                $un_pw = base64_encode($auth_array[1]);
+                $headers['Authorization'] = 'Basic '.$un_pw;
+            }
+        }
+        return $headers;
+    }
+
 
     /**
      * Gets the payload fields from the config and if there are tokens it translates them to contact values.
@@ -98,6 +163,21 @@ class CampaignHelper
 
         return $this->getTokenValues($headers, $contact);
     }
+
+    // custom
+    /**
+     * Gets the Received Data fields from the config and if there are tokens it translates them to contact values.
+     *
+     * @return array
+     */
+    private function getReceivedData(array $config, Lead $contact)
+    {
+        $receivedData = !empty($config['received_data']['list']) ? $config['received_data']['list'] : '';
+        $receivedData = array_flip(AbstractFormFieldHelper::parseList($receivedData));
+
+        return $this->getTokenValues($receivedData, $contact);
+    }
+    // custom
 
     /**
      * @param string $url
@@ -133,6 +213,8 @@ class CampaignHelper
         if (!in_array($response->code, [200, 201])) {
             throw new \OutOfRangeException('Campaign webhook response returned error code: '.$response->code);
         }
+
+        return $response;
     }
 
     /**
