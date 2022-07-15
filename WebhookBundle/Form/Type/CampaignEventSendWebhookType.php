@@ -103,16 +103,19 @@ class CampaignEventSendWebhookType extends AbstractType
         );
 
         // custom
-        $builder->add(
-            'received_data',
-            SortableListType::class,
-            [
-                'required'        => false,
-                'label'           => 'mautic.webhook.event.sendwebhook.received.data',
-                'option_required' => false,
-                'with_labels'     => true,
-            ]
-        );
+        $isPremium = $GLOBALS['isPremium'];
+        if($isPremium) {
+            $builder->add(
+                'received_data',
+                SortableListType::class,
+                [
+                    'required' => false,
+                    'label' => 'mautic.webhook.event.sendwebhook.received.data',
+                    'option_required' => false,
+                    'with_labels' => true,
+                ]
+            );
+        }
         // custom
 
         $builder->add(

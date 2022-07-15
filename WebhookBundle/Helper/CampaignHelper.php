@@ -19,10 +19,9 @@ use Mautic\LeadBundle\Entity\Lead;
 use Mautic\LeadBundle\Helper\TokenHelper;
 use Mautic\LeadBundle\Model\CompanyModel;
 use Mautic\WebhookBundle\Event\WebhookRequestEvent;
+use Mautic\WebhookBundle\utils\IfPremium;
 use Mautic\WebhookBundle\utils\PremiumFunctionality;
 use Mautic\WebhookBundle\WebhookEvents;
-use MauticPlugin\MauticTwigTemplatesBundle\Entity\TwigTemplates;
-use MauticPlugin\MauticTwigTemplatesBundle\Integration\TwigTemplatesIntegration;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class CampaignHelper
@@ -67,8 +66,11 @@ class CampaignHelper
         $payload = $this->getPayload($config, $contact);
         $headers = $this->getHeaders($config, $contact);
         // custom
-        $headers = $this->checkAndEncodeCreds($headers);
-        $receivedData = $this->getReceivedData($config, $contact);
+        $isPremium = new IfPremium($this->factory);
+        if($isPremium->checkIfPremium()){
+            $headers = $this->checkAndEncodeCreds($headers);
+            $receivedData = $this->getReceivedData($config, $contact);
+        }
         // custom
         $url     = rawurldecode(TokenHelper::findLeadTokens($config['url'], $this->getContactValues($contact), true));
 
@@ -90,38 +92,6 @@ class CampaignHelper
         }
     }
 
-    // TODO
-    public function checkIfTwig($payload)
-    {
-        $integrationHelper = $this->factory->getHelper('integration');
-        /** @var TwigTemplatesIntegration $twigIntegration */
-        $twigIntegration = $integrationHelper->getIntegrationObject(TwigTemplatesIntegration::INTEGRATION_NAME);
-        $isPublished = false;
-        if($twigIntegration) {
-            try {
-                $integration = $twigIntegration->getIntegrationSettings();
-                $isPublished = $integration->getIsPublished() ?: false;
-            } catch (IntegrationNotFoundException $e) {
-                return false;
-            }
-
-            if($isPublished){
-                foreach ($payload as $itemKey => $itemValue){
-                    if(strpos($itemValue, 'twig') !== false){
-                        $twigArray = explode("=", $itemValue);
-                        $twigID = str_replace('}', '', $twigArray[1]);
-                        $twigID = trim($twigID);
-                        $repository = $this->factory->getEntityManager()->getRepository(TwigTemplates::class);
-                        /** @var TwigTemplates $twigEntity */
-                        $twigEntity = $repository->getEntity($twigID);
-                    }
-                }
-            }
-
-        }
-        return false;
-    }
-    // TODO
 
     public function checkAndEncodeCreds($headers)
     {

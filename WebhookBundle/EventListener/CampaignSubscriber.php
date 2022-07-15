@@ -16,6 +16,7 @@ use Mautic\CampaignBundle\Event as Events;
 use Mautic\CampaignBundle\Event\CampaignExecutionEvent;
 use Mautic\WebhookBundle\Form\Type\CampaignEventSendWebhookType;
 use Mautic\WebhookBundle\Helper\CampaignHelper;
+use Mautic\WebhookBundle\utils\IfPremium;
 use Mautic\WebhookBundle\WebhookEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -26,9 +27,16 @@ class CampaignSubscriber implements EventSubscriberInterface
      */
     private $campaignHelper;
 
-    public function __construct(CampaignHelper $campaignHelper)
+    /**
+     * @var IfPremium
+     */
+    private $ifPremium;
+
+    public function __construct(CampaignHelper $campaignHelper, IfPremium $ifPremium)
     {
         $this->campaignHelper = $campaignHelper;
+        $this->ifPremium   = $ifPremium;
+        $GLOBALS['isPremium'] = $this->ifPremium->checkIfPremium();
     }
 
     /**

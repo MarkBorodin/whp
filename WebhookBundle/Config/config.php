@@ -99,6 +99,7 @@ return [
                 'class'     => \Mautic\WebhookBundle\EventListener\CampaignSubscriber::class,
                 'arguments' => [
                     'mautic.webhook.campaign.helper',
+                    'mautic.webhook.if_premium',
                 ],
             ],
         ],
